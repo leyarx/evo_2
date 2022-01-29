@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width, initial-scale=1">	
+		
+		<title>Hello :)</title>
+
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+		
+		<script type="text/javascript" src="https://ajax.aspnetcdn.com/ajax/knockout/knockout-3.4.0.js"></script>
+	</head>
+<body>
+
+    <div id="main" class="container">
+
+		<div id="add" class="jumbotron text-center">
+			<form class="form-inline">
+				<div class="input-group">
+					<input data-bind="value: name" type="text" id="inputName" class="form-control" size="50" placeholder="Ім'я" required>
+					<div class="input-group-btn">
+						<button data-bind="click: sayHello" type="button" class="btn btn-danger">Привітатись</button>
+					</div>
+				</div>
+			</form>
+		</div> 
+
+		<div id="hello" class="jumbotron text-center" style="display: none;">	
+			<p><b data-bind="text: hello"></b></p>
+		</div> 	
+		<div id="show" class="text-center">
+			<a data-bind="click: showEveryone">Список усіх, з ким уже привіталися</a>
+		</div> 	
+		<div id="list" class="jumbotron text-center" style="display: none;">	
+			<table class="table">
+				<thead>
+					<tr><td><b>Ім'я</b></td></tr>
+				</thead>
+				<tbody>
+					<!-- ko foreach: users -->
+					<tr>
+						<td data-bind="text: name"></td>
+					</tr>
+					<!-- /ko -->
+				</tbody>
+			</table>
+		</div> 
+	
+	</div>
+	
+    <script type="text/javascript">
+        function UsersViewModel() {
+            var self = this;
+			self.usersURI = 'users';
+			self.users = ko.observableArray();
+			self.name = ko.observable();
+			self.hello = ko.observable();
+			
+			
+			self.users([]);
+			
+			self.sayHello = function() {
+						
+                self.ajax(self.usersURI, 'POST', {name: self.name()}).done(function(data, textStatus, jqXHR) {
+					console.log(jqXHR.status);
+					if(jqXHR.status == 200)
+					{
+						self.hello("Вже бачилися, " + self.name());
+					}
+					else if (jqXHR.status == 201)
+					{
+						self.hello("Привіт, " + self.name());					
+					}
+                });			
+			
+				$('#add').hide();
+				$('#hello').show();
+			}
+			
+			self.showEveryone = function() {
+				$('#add').hide();
+				$('#hello').hide();
+				$('#show').hide();
+				$('#list').show();
+				
+				self.ajax(self.usersURI, 'GET').done(function(data) {
+					for (var i = 0; i < data.users.length; i++) {
+						self.users.push({
+							name: ko.observable(data.users[i].name),
+						});
+					}
+				});
+			}
+			
+            self.ajax = function(uri, method, data) {
+                var request = {
+                    url: uri,
+                    type: method,
+                    contentType: "application/json",
+                    accepts: "application/json",
+                    cache: false,
+                    dataType: 'json',
+                    data: JSON.stringify(data),
+                    error: function(jqXHR) {
+                        console.log("ajax error " + jqXHR.status);
+                    }
+                };
+                return $.ajax(request);
+            }
+
+						
+		}
+		
+		ko.applyBindings(new UsersViewModel(), $('#main')[0]);		
+    </script>
+</body>
+</html>
